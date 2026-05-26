@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engagement Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #181c24;
+    --border: #1e2330;
+    --border2: #252c3a;
+    --text: #e8eaf0;
+    --text2: #8892a4;
+    --text3: #525c6e;
+    --accent: #4f9eff;
+    --green: #22d97a;
+    --amber: #f5a623;
+    --red: #ff4d6a;
+    --purple: #9b6dff;
+    --teal: #00d4c8;
+    --card-radius: 12px;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  .light {
+    --bg: #f4f6fa;
+    --bg2: #ffffff;
+    --bg3: #eef0f6;
+    --border: #dde1ec;
+    --border2: #c8cedd;
+    --text: #111827;
+    --text2: #4b5563;
+    --text3: #9ca3af;
+    --accent: #2563eb;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --purple: #7c3aed;
+    --teal: #0d9488;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; min-height: 100vh; }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; border-bottom: 1px solid var(--border); background: var(--bg2); position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { font-family: var(--font-display); font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+  .logo span { color: var(--accent); }
+  .header-badge { font-size: 10px; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 20px; font-weight: 500; letter-spacing: 0.5px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .btn-icon { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-family: var(--font-mono); transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); border: none; color: #fff; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-family: var(--font-mono); font-weight: 500; transition: all 0.2s; }
+  .btn-primary:hover { opacity: 0.85; }
+
+  /* FILTERS */
+  .filters-bar { padding: 14px 28px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .filter-group { display: flex; align-items: center; gap: 8px; }
+  .filter-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .filter-select, .filter-input { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 7px; font-size: 12px; font-family: var(--font-mono); cursor: pointer; outline: none; transition: border-color 0.2s; }
+  .filter-select:hover, .filter-input:hover { border-color: var(--border2); }
+  .filter-select:focus, .filter-input:focus { border-color: var(--accent); }
+  .filter-input { width: 200px; }
+  .filter-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+  .preset-btns { display: flex; gap: 6px; }
+  .preset-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-family: var(--font-mono); transition: all 0.2s; }
+  .preset-btn.active, .preset-btn:hover { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .multi-select { position: relative; }
+  .multi-select-trigger { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 7px; font-size: 12px; font-family: var(--font-mono); cursor: pointer; display: flex; align-items: center; gap: 6px; min-width: 130px; user-select: none; transition: border-color 0.2s; }
+  .multi-select-trigger:hover { border-color: var(--border2); }
+  .multi-select-dropdown { position: absolute; top: calc(100% + 4px); left: 0; background: var(--bg2); border: 1px solid var(--border2); border-radius: 8px; min-width: 160px; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); overflow: hidden; display: none; }
+  .multi-select-dropdown.open { display: block; }
+  .multi-opt { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; transition: background 0.15s; font-size: 12px; }
+  .multi-opt:hover { background: var(--bg3); }
+  .multi-opt input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; }
+  .date-range { display: flex; align-items: center; gap: 6px; }
+  .date-range input[type=date] { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: 7px; font-size: 12px; font-family: var(--font-mono); outline: none; colorscheme: dark; }
+
+  /* MAIN */
+  .main { padding: 24px 28px; display: flex; flex-direction: column; gap: 24px; max-width: 1600px; margin: 0 auto; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 18px 20px; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-card.green { border-top: 3px solid var(--green); }
+  .kpi-card.amber { border-top: 3px solid var(--amber); }
+  .kpi-card.red { border-top: 3px solid var(--red); }
+  .kpi-card.blue { border-top: 3px solid var(--accent); }
+  .kpi-card.purple { border-top: 3px solid var(--purple); }
+  .kpi-card.teal { border-top: 3px solid var(--teal); }
+  .kpi-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .kpi-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 6px; }
+  .kpi-sparkline { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .sparkline-arrow { font-size: 12px; }
+  .sparkline-arrow.up { color: var(--green); }
+  .sparkline-arrow.down { color: var(--red); }
+  .sparkline-val.up { color: var(--green); }
+  .sparkline-val.down { color: var(--red); }
+  .sparkline-sub { color: var(--text3); }
+  .spark-svg { position: absolute; bottom: 0; right: 0; opacity: 0.15; }
+
+  /* SECTION TITLES */
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .section-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+  .section-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* CHARTS ROW */
+  .charts-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; }
+  .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 20px; }
+  .chart-title { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .chart-wrap { position: relative; }
+
+  /* FUNNEL */
+  .funnel-wrap { display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+  .funnel-row { display: flex; align-items: center; gap: 12px; }
+  .funnel-label { font-size: 11px; color: var(--text2); width: 110px; text-align: right; flex-shrink: 0; }
+  .funnel-bar-wrap { flex: 1; height: 28px; background: var(--bg3); border-radius: 4px; overflow: hidden; position: relative; }
+  .funnel-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-weight: 500; color: #fff; transition: width 0.8s ease; white-space: nowrap; }
+  .funnel-pct { font-size: 11px; color: var(--text2); width: 40px; text-align: right; flex-shrink: 0; }
+
+  /* TABLE */
+  .table-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+  .table-search { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 7px; font-size: 12px; font-family: var(--font-mono); outline: none; width: 220px; transition: border-color 0.2s; }
+  .table-search:focus { border-color: var(--accent); }
+  .table-actions { display: flex; gap: 8px; }
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; min-width: 700px; }
+  thead th { background: var(--bg3); padding: 10px 14px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); font-weight: 500; white-space: nowrap; cursor: pointer; user-select: none; transition: color 0.2s; border-bottom: 1px solid var(--border); }
+  thead th:hover { color: var(--text); }
+  thead th .sort-icon { margin-left: 4px; opacity: 0.4; }
+  thead th.sorted .sort-icon { opacity: 1; color: var(--accent); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody tr.expanded-row { background: var(--bg3); }
+  td { padding: 11px 14px; font-size: 12px; color: var(--text2); vertical-align: middle; }
+  td.client-name { color: var(--text); font-weight: 500; }
+  .risk-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
+  .risk-badge.high { background: color-mix(in srgb, var(--red) 15%, transparent); color: var(--red); border: 1px solid color-mix(in srgb, var(--red) 30%, transparent); }
+  .risk-badge.watch { background: color-mix(in srgb, var(--amber) 15%, transparent); color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent); }
+  .risk-badge.healthy { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); }
+  .score-bar { display: flex; align-items: center; gap: 8px; }
+  .score-track { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; min-width: 60px; }
+  .score-fill { height: 100%; border-radius: 2px; }
+  .row-actions { display: flex; gap: 6px; }
+  .action-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text2); padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 10px; font-family: var(--font-mono); transition: all 0.2s; white-space: nowrap; }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.call:hover { border-color: var(--green); color: var(--green); }
+  /* expand row */
+  .expand-row { display: none; }
+  .expand-row.open { display: table-row; }
+  .expand-row td { background: color-mix(in srgb, var(--accent) 4%, var(--bg2)); border-top: 1px dashed var(--border2); }
+  .expand-content { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 8px 4px; }
+  .expand-stat { display: flex; flex-direction: column; gap: 3px; }
+  .expand-stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; }
+  .expand-stat-val { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text); }
+  .notes-row { margin-top: 10px; display: flex; gap: 8px; align-items: center; }
+  .notes-input { flex: 1; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-family: var(--font-mono); outline: none; }
+  .notes-input:focus { border-color: var(--accent); }
+  .notes-save { background: var(--accent); border: none; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-family: var(--font-mono); }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; flex-wrap: wrap; gap: 8px; }
+  .page-info { font-size: 11px; color: var(--text3); }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size:11px; font-family: var(--font-mono); transition: all 0.2s; min-width: 32px; text-align: center; }
+  .page-btn:hover, .page-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* HEATMAP */
+  .heatmap-grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); gap: 3px; font-size: 10px; }
+  .hm-header { color: var(--text3); text-align: center; padding: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hm-label { color: var(--text3); display: flex; align-items: center; font-size: 10px; }
+  .hm-cell { height: 28px; border-radius: 3px; transition: opacity 0.2s; cursor: pointer; position: relative; }
+  .hm-cell:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: var(--bg); border: 1px solid var(--border2); color: var(--text); padding: 4px 8px; border-radius: 5px; font-size: 10px; white-space: nowrap; z-index: 10; }
+
+  /* SCATTER */
+  .scatter-wrap { position: relative; height: 220px; }
+
+  /* COUNTER ANIM */
+  @keyframes countUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .kpi-value { animation: countUp 0.5s ease forwards; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg2); border: 1px solid var(--border2); color: var(--text); padding: 10px 18px; border-radius: 8px; font-size: 12px; z-index: 9999; transform: translateY(60px); opacity: 0; transition: all 0.3s; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.green { border-color: var(--green); }
+  #toast.red { border-color: var(--red); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { .main { padding: 16px; } .filters-bar { padding: 10px 16px; } .header { padding: 14px 16px; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Engage<span>.</span>io</div>
+    <div class="header-badge">LIVE</div>
+  </div>
+  <div class="header-right">
+    <button class="btn-icon" onclick="toggleTheme()">☀ Theme</button>
+    <button class="btn-icon" onclick="savePreset()">⊞ Save Preset</button>
+    <button class="btn-primary" onclick="exportCSV()">↓ Export CSV</button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <span class="filter-label">Range</span>
+    <div class="date-range">
+      <input type="date" id="dateFrom" onchange="applyFilters()">
+      <span style="color:var(--text3)">→</span>
+      <input type="date" id="dateTo" onchange="applyFilters()">
+    </div>
+    <div class="preset-btns">
+      <button class="preset-btn" onclick="setPreset(7,this)">7d</button>
+      <button class="preset-btn active" onclick="setPreset(30,this)">30d</button>
+      <button class="preset-btn" onclick="setPreset(90,this)">90d</button>
+    </div>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-group">
+    <span class="filter-label">Segment</span>
+    <div class="multi-select" id="segmentMS">
+      <div class="multi-select-trigger" onclick="toggleMS('segmentMS')">
+        <span id="segmentLabel">All Segments</span> ▾
+      </div>
+      <div class="multi-select-dropdown" id="segmentMS-dd">
+        <label class="multi-opt"><input type="checkbox" value="smb" onchange="updateMS('segment')" checked> SMB</label>
+        <label class="multi-opt"><input type="checkbox" value="mid" onchange="updateMS('segment')" checked> Mid-market</label>
+        <label class="multi-opt"><input type="checkbox" value="enterprise" onchange="updateMS('segment')" checked> Enterprise</label>
+      </div>
+    </div>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-group">
+    <span class="filter-label">Cohort</span>
+    <div class="multi-select" id="cohortMS">
+      <div class="multi-select-trigger" onclick="toggleMS('cohortMS')">
+        <span id="cohortLabel">All Cohorts</span> ▾
+      </div>
+      <div class="multi-select-dropdown" id="cohortMS-dd">
+        <label class="multi-opt"><input type="checkbox" value="new" onchange="updateMS('cohort')" checked> New</label>
+        <label class="multi-opt"><input type="checkbox" value="growing" onchange="updateMS('cohort')" checked> Growing</label>
+        <label class="multi-opt"><input type="checkbox" value="mature" onchange="updateMS('cohort')" checked> Mature</label>
+      </div>
+    </div>
+  </div>
+  <div class="filter-sep"></div>
+  <div class="filter-group">
+    <span class="filter-label">Presets</span>
+    <div class="preset-btns" id="savedPresets"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- KPI CARDS -->
+  <div>
+    <div class="section-header"><div class="section-dot"></div><div class="section-title">Engagement Metrics</div></div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">DAU / MAU Ratio — Trend vs Target</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="dauChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Customer Journey Funnel</div>
+      <div class="funnel-wrap" id="funnelWrap"></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Email Open Rate vs In-App CTR</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="commChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Login Frequency Heatmap (Last 6 Weeks)</div>
+      <div id="heatmapWrap"></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 3 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Feature Adoption Rates</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="adoptChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Engagement Score vs Session Duration (Scatter)</div>
+      <div class="chart-wrap scatter-wrap"><canvas id="scatterChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- AT-RISK TABLE -->
+  <div>
+    <div class="section-header"><div class="section-dot" style="background:var(--red)"></div><div class="section-title">At-Risk Clients</div></div>
+    <div class="table-toolbar">
+      <input class="table-search" id="tableSearch" placeholder="🔍  Search clients..." oninput="filterTable()">
+      <div class="table-actions">
+        <button class="btn-icon" onclick="exportCSV()">↓ CSV</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="riskTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('name')">Client <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('segment')">Segment <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('score')">Eng. Score <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('lastLogin')">Last Login <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('risk')">Risk <span class="sort-icon">↕</span></th>
+            <th>Actions</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="page-info" id="pageInfo"></div>
+      <div class="page-btns" id="pageBtns"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const clients = [
+  { name:'Acme Corp',      segment:'enterprise', cohort:'mature',  score:82, lastLogin:'2026-05-24', risk:'healthy', dau:38,mau:52,sessions:6.2,activations:94,ttv:3,logins:12,emailOpen:44,inappCTR:7.8 },
+  { name:'BrightTech',     segment:'mid',        cohort:'growing', score:61, lastLogin:'2026-05-20', risk:'watch',   dau:29,mau:55,sessions:4.1,activations:78,ttv:5,logins:8, emailOpen:32,inappCTR:5.1 },
+  { name:'CloudBase',      segment:'smb',        cohort:'new',     score:28, lastLogin:'2026-05-10', risk:'high',    dau:14,mau:45,sessions:2.0,activations:41,ttv:12,logins:3,emailOpen:18,inappCTR:2.3 },
+  { name:'DataSphere',     segment:'enterprise', cohort:'mature',  score:91, lastLogin:'2026-05-25', risk:'healthy', dau:44,mau:58,sessions:7.8,activations:97,ttv:2,logins:15,emailOpen:51,inappCTR:9.1 },
+  { name:'Echo Systems',   segment:'mid',        cohort:'growing', score:45, lastLogin:'2026-05-18', risk:'watch',   dau:22,mau:50,sessions:3.2,activations:62,ttv:8,logins:6, emailOpen:28,inappCTR:3.9 },
+  { name:'FutureCo',       segment:'smb',        cohort:'new',     score:19, lastLogin:'2026-05-05', risk:'high',    dau:8, mau:42,sessions:1.4,activations:32,ttv:18,logins:2,emailOpen:14,inappCTR:1.2 },
+  { name:'Greenfield Inc', segment:'enterprise', cohort:'mature',  score:78, lastLogin:'2026-05-23', risk:'healthy', dau:36,mau:54,sessions:5.9,activations:89,ttv:4,logins:11,emailOpen:42,inappCTR:7.2 },
+  { name:'HorizonAI',      segment:'mid',        cohort:'growing', score:55, lastLogin:'2026-05-19', risk:'watch',   dau:26,mau:52,sessions:3.8,activations:70,ttv:6,logins:7, emailOpen:30,inappCTR:4.6 },
+  { name:'Ironclad',       segment:'smb',        cohort:'new',     score:22, lastLogin:'2026-05-08', risk:'high',    dau:11,mau:44,sessions:1.7,activations:38,ttv:15,logins:3,emailOpen:16,inappCTR:1.8 },
+  { name:'JetStream',      segment:'enterprise', cohort:'mature',  score:88, lastLogin:'2026-05-25', risk:'healthy', dau:42,mau:57,sessions:7.1,activations:95,ttv:2,logins:14,emailOpen:48,inappCTR:8.6 },
+  { name:'Keystone LLC',   segment:'mid',        cohort:'growing', score:67, lastLogin:'2026-05-21', risk:'watch',   dau:31,mau:53,sessions:4.5,activations:81,ttv:5,logins:9, emailOpen:35,inappCTR:5.8 },
+  { name:'Luminary',       segment:'smb',        cohort:'new',     score:34, lastLogin:'2026-05-13', risk:'high',    dau:17,mau:46,sessions:2.4,activations:48,ttv:11,logins:4,emailOpen:21,inappCTR:2.9 },
+  { name:'Magnet Co',      segment:'enterprise', cohort:'mature',  score:76, lastLogin:'2026-05-22', risk:'healthy', dau:35,mau:53,sessions:5.6,activations:87,ttv:4,logins:10,emailOpen:41,inappCTR:6.9 },
+  { name:'NexaData',       segment:'mid',        cohort:'growing', score:49, lastLogin:'2026-05-17', risk:'watch',   dau:23,mau:51,sessions:3.4,activations:65,ttv:7,logins:6, emailOpen:27,inappCTR:4.2 },
+  { name:'OpenPath',       segment:'smb',        cohort:'new',     score:15, lastLogin:'2026-05-03', risk:'high',    dau:6, mau:40,sessions:1.1,activations:28,ttv:21,logins:2,emailOpen:12,inappCTR:0.9 },
+];
+const notes = {};
+
+let sortCol = 'score', sortDir = 'asc', searchVal = '', currentPage = 1;
+const PAGE_SIZE = 6;
+let filteredData = [...clients];
+
+// ── THEME ─────────────────────────────────────────────────────────
+let dark = true;
+function toggleTheme(){
+  dark = !dark;
+  document.body.classList.toggle('light', !dark);
+  // Redraw charts
+  setTimeout(initCharts, 50);
+}
+
+// ── DATE PRESETS ──────────────────────────────────────────────────
+function setPreset(days, btn){
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const to = new Date(); const from = new Date(); from.setDate(to.getDate() - days);
+  document.getElementById('dateFrom').value = from.toISOString().split('T')[0];
+  document.getElementById('dateTo').value   = to.toISOString().split('T')[0];
+  applyFilters();
+}
+
+function initDates(){
+  const to = new Date(); const from = new Date(); from.setDate(to.getDate() - 30);
+  document.getElementById('dateFrom').value = from.toISOString().split('T')[0];
+  document.getElementById('dateTo').value   = to.toISOString().split('T')[0];
+}
+
+// ── MULTI-SELECT ──────────────────────────────────────────────────
+function toggleMS(id){
+  document.getElementById(id+'-dd').classList.toggle('open');
+  document.addEventListener('click', function handler(e){
+    if(!document.getElementById(id).contains(e.target)){
+      document.getElementById(id+'-dd').classList.remove('open');
+      document.removeEventListener('click', handler);
+    }
+  });
+}
+function getChecked(name){
+  return [...document.querySelectorAll(`#${name}MS-dd input:checked`)].map(i=>i.value);
+}
+function updateMS(name){
+  const checked = getChecked(name);
+  const el = document.getElementById(name+'Label');
+  if(checked.length === 0) el.textContent = 'None';
+  else if(checked.length === document.querySelectorAll(`#${name}MS-dd input`).length) el.textContent = 'All '+name.charAt(0).toUpperCase()+name.slice(1)+'s';
+  else el.textContent = checked.length + ' selected';
+  applyFilters();
+}
+
+// ── PRESET SAVE ───────────────────────────────────────────────────
+const savedPresets = JSON.parse(localStorage.getItem('presets')||'[]');
+function savePreset(){
+  const name = prompt('Preset name:'); if(!name) return;
+  const p = { name, from: document.getElementById('dateFrom').value, to: document.getElementById('dateTo').value,
+    segments: getChecked('segment'), cohorts: getChecked('cohort') };
+  savedPresets.push(p);
+  localStorage.setItem('presets', JSON.stringify(savedPresets));
+  renderPresets();
+  showToast('Preset "'+name+'" saved ✓', 'green');
+}
+function renderPresets(){
+  const wrap = document.getElementById('savedPresets'); wrap.innerHTML='';
+  savedPresets.forEach((p,i)=>{
+    const b = document.createElement('button'); b.className='preset-btn';
+    b.textContent = p.name; b.onclick = () => loadPreset(i); wrap.appendChild(b);
+  });
+}
+function loadPreset(i){
+  const p = savedPresets[i];
+  document.getElementById('dateFrom').value = p.from;
+  document.getElementById('dateTo').value   = p.to;
+  document.querySelectorAll('#segmentMS-dd input').forEach(el => el.checked = p.segments.includes(el.value));
+  document.querySelectorAll('#cohortMS-dd input').forEach(el => el.checked = p.cohorts.includes(el.value));
+  updateMS('segment'); updateMS('cohort'); applyFilters();
+  showToast('Loaded preset "'+p.name+'"');
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────
+function applyFilters(){
+  const segs = getChecked('segment'), cohorts = getChecked('cohort');
+  filteredData = clients.filter(c => segs.includes(c.segment) && cohorts.includes(c.cohort));
+  renderKPIs(); filterTable();
+}
+
+// ── KPI CARDS ─────────────────────────────────────────────────────
+const kpis = [
+  { label:'DAU/MAU Ratio', key:'dau', denom:'mau', fmt: v=>(v*100).toFixed(1)+'%', color:'blue', trend:'+2.1%', dir:'up' },
+  { label:'Avg Session Duration', key:'sessions', fmt: v=>v.toFixed(1)+'min', color:'purple', trend:'+0.4min', dir:'up' },
+  { label:'Activation Rate', key:'activations', fmt: v=>v.toFixed(0)+'%', color:'teal', trend:'-3.2%', dir:'down' },
+  { label:'Avg Time-to-Value', key:'ttv', fmt: v=>v.toFixed(0)+'d', color:'amber', trend:'-1d', dir:'up' },
+  { label:'Email Open Rate', key:'emailOpen', fmt: v=>v.toFixed(1)+'%', color:'green', trend:'+1.8%', dir:'up' },
+  { label:'In-App CTR', key:'inappCTR', fmt: v=>v.toFixed(1)+'%', color:'blue', trend:'+0.3%', dir:'up' },
+  { label:'Login Frequency', key:'logins', fmt: v=>v.toFixed(1)+'/mo', color:'green', trend:'+0.6', dir:'up' },
+  { label:'At-Risk Clients', val: ()=>filteredData.filter(c=>c.risk==='high').length, fmt: v=>v, color:'red', trend:'-1', dir:'up' },
+];
+function avg(key, d2=null){ const d = d2||filteredData; if(!d.length) return 0; return d.reduce((s,c)=>s+(d2?c[key]/c[d2]:c[key]),0)/d.length; }
+function renderKPIs(){
+  const grid = document.getElementById('kpiGrid'); grid.innerHTML='';
+  kpis.forEach(k=>{
+    let val;
+    if(k.val) val = k.val();
+    else if(k.denom) val = avg(k.key)/avg(k.denom);
+    else val = avg(k.key);
+    const formatted = k.fmt(val);
+    const card = document.createElement('div'); card.className=`kpi-card ${k.color}`;
+    card.innerHTML = `
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="--target:'${formatted}'">${formatted}</div>
+      <div class="kpi-sparkline">
+        <span class="sparkline-arrow ${k.dir}">${k.dir==='up'?'↑':'↓'}</span>
+        <span class="sparkline-val ${k.dir}">${k.trend}</span>
+        <span class="sparkline-sub">vs last period</span>
+      </div>
+      <svg class="spark-svg" width="80" height="40" viewBox="0 0 80 40">
+        <polyline points="${Array.from({length:8},(_,i)=>`${i*11},${10+Math.random()*25}`).join(' ')}" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+      </svg>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────
+let charts = {};
+function destroyCharts(){ Object.values(charts).forEach(c=>c&&c.destroy()); charts={}; }
+
+function chartColors(){
+  return {
+    accent: getComputedStyle(document.body).getPropertyValue('--accent').trim()||'#4f9eff',
+    green:  getComputedStyle(document.body).getPropertyValue('--green').trim()||'#22d97a',
+    amber:  getComputedStyle(document.body).getPropertyValue('--amber').trim()||'#f5a623',
+    red:    getComputedStyle(document.body).getPropertyValue('--red').trim()||'#ff4d6a',
+    purple: getComputedStyle(document.body).getPropertyValue('--purple').trim()||'#9b6dff',
+    text2:  getComputedStyle(document.body).getPropertyValue('--text2').trim()||'#8892a4',
+    border: getComputedStyle(document.body).getPropertyValue('--border').trim()||'#1e2330',
+    bg3:    getComputedStyle(document.body).getPropertyValue('--bg3').trim()||'#181c24',
+  };
+}
+
+function initCharts(){
+  destroyCharts();
+  const C = chartColors();
+  Chart.defaults.color = C.text2;
+  Chart.defaults.borderColor = C.border;
+
+  const labels = ['May 1','May 5','May 9','May 13','May 17','May 21','May 25'];
+
+  // DAU/MAU
+  const dCtx = document.getElementById('dauChart').getContext('2d');
+  charts.dau = new Chart(dCtx,{ type:'line', data:{ labels,
+    datasets:[
+      { label:'DAU/MAU %', data:[31,33,30,35,37,34,38], borderColor:C.accent, backgroundColor:C.accent+'22', fill:true, tension:0.4, pointRadius:3 },
+      { label:'Target (35%)', data:[35,35,35,35,35,35,35], borderColor:C.amber, borderDash:[5,4], pointRadius:0 }
+    ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{font:{size:11}}}}, scales:{ y:{ min:20, max:50, ticks:{callback:v=>v+'%'} } } } });
+
+  // COMM
+  const cCtx = document.getElementById('commChart').getContext('2d');
+  charts.comm = new Chart(cCtx,{ type:'line', data:{ labels,
+    datasets:[
+      { label:'Email Open %', data:[38,40,37,42,41,44,43], borderColor:C.green, backgroundColor:C.green+'18', fill:true, tension:0.4, pointRadius:3 },
+      { label:'In-App CTR %', data:[5.2,5.8,5.0,6.1,5.9,6.3,6.0], borderColor:C.purple, backgroundColor:C.purple+'18', fill:true, tension:0.4, pointRadius:3 }
+    ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{font:{size:11}}}}, scales:{ y:{ ticks:{callback:v=>v+'%'} } } } });
+
+  // FEATURE ADOPTION
+  const aCtx = document.getElementById('adoptChart').getContext('2d');
+  const features = ['Analytics','Integrations','Reports','Automation','Collab','Mobile','API','Alerts'];
+  const adoptVals = [88,74,69,55,48,42,36,28];
+  charts.adopt = new Chart(aCtx,{ type:'bar',
+    data:{ labels:features, datasets:[{ data:adoptVals,
+      backgroundColor: adoptVals.map(v=> v>=70?C.green+'cc': v>=50?C.amber+'cc':C.red+'cc'),
+      borderRadius:4 }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}}, scales:{ x:{ max:100, ticks:{callback:v=>v+'%'} } } } });
+
+  // SCATTER
+  const sCtx = document.getElementById('scatterChart').getContext('2d');
+  const scatterData = filteredData.map(c=>({ x:c.sessions, y:c.score, label:c.name }));
+  charts.scatter = new Chart(sCtx,{ type:'scatter',
+    data:{ datasets:[{ label:'Clients', data:scatterData, backgroundColor:C.accent+'aa', pointRadius:7, pointHoverRadius:9 }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => `${scatterData[ctx.dataIndex].label}: ${ctx.raw.x}min / ${ctx.raw.y}pts` } } },
+      scales:{ x:{title:{display:true,text:'Session Duration (min)',color:C.text2}}, y:{title:{display:true,text:'Engagement Score',color:C.text2}} } } });
+
+  renderFunnel(C);
+  renderHeatmap(C);
+}
+
+// FUNNEL
+function renderFunnel(C){
+  const steps=[
+    { label:'Visitors',  val:10000, color:'#4f9eff' },
+    { label:'Signups',   val:4200,  color:'#9b6dff' },
+    { label:'Activated', val:2800,  color:'#00d4c8' },
+    { label:'Retained',  val:1650,  color:'#22d97a' },
+    { label:'Expanded',  val:820,   color:'#f5a623' },
+  ];
+  const max = steps[0].val;
+  const wrap = document.getElementById('funnelWrap'); wrap.innerHTML='';
+  steps.forEach(s=>{
+    const pct = ((s.val/max)*100).toFixed(0);
+    wrap.innerHTML += `<div class="funnel-row">
+      <div class="funnel-label">${s.label}</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${s.color}">${s.val.toLocaleString()}</div></div>
+      <div class="funnel-pct">${pct}%</div>
+    </div>`;
+  });
+}
+
+// HEATMAP
+function renderHeatmap(C){
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const weeks = ['W1','W2','W3','W4','W5','W6'];
+  const data = weeks.map(()=>days.map(()=>Math.floor(Math.random()*100)));
+  const wrap = document.getElementById('heatmapWrap'); wrap.innerHTML='';
+  const grid = document.createElement('div'); grid.className='heatmap-grid';
+  grid.innerHTML = '<div></div>'+days.map(d=>`<div class="hm-header">${d}</div>`).join('');
+  weeks.forEach((w,wi)=>{
+    grid.innerHTML += `<div class="hm-label">${w}</div>`;
+    days.forEach((d,di)=>{
+      const v = data[wi][di];
+      const alpha = (v/100)*0.9+0.1;
+      grid.innerHTML += `<div class="hm-cell" style="background:color-mix(in srgb, #4f9eff ${v}%, #181c24)" data-tip="${w} ${d}: ${v} logins"></div>`;
+    });
+  });
+  wrap.appendChild(grid);
+}
+
+// ── TABLE ─────────────────────────────────────────────────────────
+function filterTable(){
+  searchVal = document.getElementById('tableSearch').value.toLowerCase();
+  currentPage = 1;
+  renderTable();
+}
+
+function sortTable(col){
+  if(sortCol===col) sortDir = sortDir==='asc'?'desc':'asc'; else { sortCol=col; sortDir='asc'; }
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.remove('sorted');
+    const icon = th.querySelector('.sort-icon');
+    if(icon) icon.textContent='↕';
+  });
+  const ths = document.querySelectorAll('thead th');
+  const cols = ['name','segment','score','lastLogin','risk','',''];
+  const idx = cols.indexOf(col);
+  if(idx>=0){ ths[idx].classList.add('sorted'); ths[idx].querySelector('.sort-icon').textContent = sortDir==='asc'?'↑':'↓'; }
+  renderTable();
+}
+
+function renderTable(){
+  let data = filteredData.filter(c=> !searchVal || c.name.toLowerCase().includes(searchVal)||c.segment.toLowerCase().includes(searchVal)||c.risk.toLowerCase().includes(searchVal));
+  data = [...data].sort((a,b)=>{
+    let va=a[sortCol],vb=b[sortCol];
+    if(typeof va==='string') va=va.toLowerCase(),vb=vb.toLowerCase();
+    return sortDir==='asc'?(va>vb?1:-1):(va<vb?1:-1);
+  });
+  const total = data.length, pages = Math.max(1,Math.ceil(total/PAGE_SIZE));
+  currentPage = Math.min(currentPage, pages);
+  const slice = data.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+
+  const body = document.getElementById('tableBody'); body.innerHTML='';
+  slice.forEach((c,i)=>{
+    const scoreColor = c.score>=70?'var(--green)':c.score>=45?'var(--amber)':'var(--red)';
+    const rid = `expand-${i}`;
+    const note = notes[c.name]||'';
+    const riskMap = {high:'High',watch:'Watch',healthy:'Healthy'};
+    body.innerHTML += `
+      <tr onclick="toggleExpand('${rid}')">
+        <td class="client-name">${c.name}</td>
+        <td>${c.segment.charAt(0).toUpperCase()+c.segment.slice(1)}</td>
+        <td><div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${c.score}%;background:${scoreColor}"></div></div><span style="color:${scoreColor};font-weight:600">${c.score}</span></div></td>
+        <td>${c.lastLogin}</td>
+        <td><span class="risk-badge ${c.risk}">● ${riskMap[c.risk]}</span></td>
+        <td><div class="row-actions"><button class="action-btn" onclick="event.stopPropagation();doAction('email','${c.name}')">✉ Email</button><button class="action-btn call" onclick="event.stopPropagation();doAction('call','${c.name}')">📞 Call</button></div></td>
+        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text3)">${note||'—'}</td>
+      </tr>
+      <tr class="expand-row" id="${rid}">
+        <td colspan="7">
+          <div class="expand-content">
+            <div class="expand-stat"><div class="expand-stat-label">DAU/MAU</div><div class="expand-stat-val">${(c.dau/c.mau*100).toFixed(1)}%</div></div>
+            <div class="expand-stat"><div class="expand-stat-label">Sessions/mo</div><div class="expand-stat-val">${c.sessions}</div></div>
+            <div class="expand-stat"><div class="expand-stat-label">Activation</div><div class="expand-stat-val">${c.activations}%</div></div>
+            <div class="expand-stat"><div class="expand-stat-label">Time-to-Value</div><div class="expand-stat-val">${c.ttv}d</div></div>
+            <div class="expand-stat"><div class="expand-stat-label">Email Open</div><div class="expand-stat-val">${c.emailOpen}%</div></div>
+            <div class="expand-stat"><div class="expand-stat-label">In-App CTR</div><div class="expand-stat-val">${c.inappCTR}%</div></div>
+          </div>
+          <div class="notes-row">
+            <input class="notes-input" id="note-${c.name.replace(/\s/g,'_')}" placeholder="Add internal note..." value="${note}" onclick="event.stopPropagation()">
+            <button class="notes-save" onclick="event.stopPropagation();saveNote('${c.name}')">Save</button>
+          </div>
+        </td>
+      </tr>`;
+  });
+
+  // pagination
+  document.getElementById('pageInfo').textContent = `Showing ${(currentPage-1)*PAGE_SIZE+1}–${Math.min(currentPage*PAGE_SIZE,total)} of ${total}`;
+  const pb = document.getElementById('pageBtns'); pb.innerHTML='';
+  const prev = document.createElement('button'); prev.className='page-btn'; prev.textContent='‹'; prev.disabled=currentPage===1; prev.onclick=()=>{currentPage--;renderTable();}; pb.appendChild(prev);
+  for(let p=1;p<=pages;p++){
+    const b = document.createElement('button'); b.className='page-btn'+(p===currentPage?' active':''); b.textContent=p; b.onclick=(pp=>()=>{currentPage=pp;renderTable();})(p); pb.appendChild(b);
+  }
+  const next = document.createElement('button'); next.className='page-btn'; next.textContent='›'; next.disabled=currentPage===pages; next.onclick=()=>{currentPage++;renderTable();}; pb.appendChild(next);
+}
+
+function toggleExpand(id){
+  const row = document.getElementById(id);
+  if(row) row.classList.toggle('open');
+}
+function doAction(type, name){
+  showToast(type==='email'?`✉ Draft email opened for ${name}`:`📞 Call scheduled with ${name}`, 'green');
+}
+function saveNote(name){
+  const key = name.replace(/\s/g,'_');
+  notes[name] = document.getElementById('note-'+key).value;
+  localStorage.setItem('notes', JSON.stringify(notes));
+  showToast('Note saved for '+name+' ✓','green');
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────
+function exportCSV(){
+  const rows = [['Name','Segment','Cohort','Score','Last Login','Risk','Notes']];
+  filteredData.forEach(c=>rows.push([c.name,c.segment,c.cohort,c.score,c.lastLogin,c.risk,notes[c.name]||'']));
+  const csv = rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='engagement_report.csv'; a.click();
+  showToast('CSV downloaded ✓','green');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, cls=''){
+  const t = document.getElementById('toast'); t.textContent=msg; t.className='show '+(cls||'');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.className='',2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+Object.assign(notes, JSON.parse(localStorage.getItem('notes')||'{}'));
+renderPresets();
+initDates();
+applyFilters();
+initCharts();
+</script>
+</body>
+</html>
