@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 AI Adventure Quiz!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+  :root {
+    --sky: #87CEEB; --sunshine: #FFD700; --grass: #7BC67E; --coral: #FF6B6B;
+    --purple: #A855F7; --mint: #4ECDC4; --orange: #FF8C42; --pink: #FF69B4;
+    --white: #FFFEF7; --dark: #2D3436;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(180deg, #87CEEB 0%, #B0E2FF 40%, #7BC67E 100%);
+    min-height: 100vh; overflow-x: hidden; position: relative;
+  }
+  .cloud {
+    position: fixed; background: white; border-radius: 50px; opacity: 0.85;
+    animation: floatCloud linear infinite; pointer-events: none; z-index: 0;
+  }
+  .cloud::before, .cloud::after { content: ''; position: absolute; background: white; border-radius: 50%; }
+  .cloud-1 { width: 120px; height: 40px; top: 8%; animation-duration: 25s; }
+  .cloud-1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+  .cloud-1::after { width: 45px; height: 45px; top: -20px; left: 50px; }
+  .cloud-2 { width: 90px; height: 30px; top: 18%; animation-duration: 35s; animation-delay: -10s; }
+  .cloud-2::before { width: 45px; height: 45px; top: -22px; left: 10px; }
+  .cloud-2::after { width: 35px; height: 35px; top: -15px; left: 40px; }
+  .cloud-3 { width: 150px; height: 45px; top: 5%; animation-duration: 45s; animation-delay: -20s; }
+  .cloud-3::before { width: 70px; height: 70px; top: -35px; left: 20px; }
+  .cloud-3::after { width: 55px; height: 55px; top: -25px; left: 65px; }
+  @keyframes floatCloud { from { left: -200px; } to { left: calc(100vw + 200px); } }
+  .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; overflow: hidden; }
+  .confetti-piece { position: absolute; border-radius: 2px; animation: confettiFall linear forwards; }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(720deg) scale(0.5); opacity: 0; }
+  }
+  .container { position: relative; z-index: 10; max-width: 680px; margin: 0 auto; padding: 20px 16px 40px; }
+  .header { text-align: center; padding: 24px 0 16px; animation: bounceIn 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  .header h1 {
+    font-family: 'Fredoka One', cursive; font-size: clamp(2rem, 7vw, 3.2rem); color: white;
+    text-shadow: 3px 3px 0 var(--coral), 6px 6px 0 rgba(0,0,0,0.15); line-height: 1.1; letter-spacing: 1px;
+  }
+  .header .subtitle { font-size: 1.05rem; color: white; font-weight: 700; margin-top: 6px; text-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+  .robot-emoji { font-size: 3rem; display: block; animation: wiggle 2s ease-in-out infinite; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes bounceIn {
+    0% { transform: scale(0.3) translateY(-50px); opacity: 0; }
+    60% { transform: scale(1.05) translateY(5px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); }
+  }
+  .score-bar {
+    background: white; border-radius: 20px; padding: 12px 20px; margin-bottom: 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12); border: 3px solid var(--sunshine);
+  }
+  .score-item { text-align: center; }
+  .score-label { font-size: 0.7rem; font-weight: 800; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .score-value { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: var(--purple); }
+  .progress-wrap { flex: 1; margin: 0 16px; }
+  .progress-track { background: #EEE; border-radius: 20px; height: 14px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--mint), var(--purple));
+    border-radius: 20px; transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative;
+  }
+  .progress-fill::after { content: '⭐'; position: absolute; right: -2px; top: -6px; font-size: 1rem; }
+  .question-card {
+    background: var(--white); border-radius: 28px; padding: 28px 24px 22px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 4px 0 rgba(0,0,0,0.06);
+    border: 3px solid #E8E0FF; animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative; overflow: hidden;
+  }
+  .question-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+    background: linear-gradient(90deg, var(--coral), var(--orange), var(--sunshine), var(--mint), var(--purple));
+  }
+  @keyframes slideUp {
+    from { transform: translateY(40px) scale(0.96); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .q-number { font-family: 'Fredoka One', cursive; font-size: 0.85rem; color: var(--purple); background: #F0E8FF; display: inline-block; padding: 4px 14px; border-radius: 20px; margin-bottom: 12px; }
+  .q-text { font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 800; color: var(--dark); line-height: 1.45; margin-bottom: 22px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn {
+    background: white; border: 3px solid #E8E0FF; border-radius: 18px; padding: 14px 18px;
+    text-align: left; font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 700;
+    color: var(--dark); cursor: pointer; display: flex; align-items: center; gap: 12px;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; overflow: hidden;
+  }
+  .option-btn:hover:not(:disabled) { border-color: var(--purple); background: #F8F0FF; transform: translateY(-2px) scale(1.01); box-shadow: 0 6px 20px rgba(168,85,247,0.2); }
+  .option-btn:active:not(:disabled) { transform: scale(0.98); }
+  .option-letter { width: 32px; height: 32px; background: #F0E8FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Fredoka One', cursive; font-size: 0.9rem; color: var(--purple); flex-shrink: 0; transition: all 0.2s; }
+  .option-btn.correct { background: #F0FFF4; border-color: var(--grass); animation: correctPop 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  .option-btn.correct .option-letter { background: var(--grass); color: white; }
+  .option-btn.wrong { background: #FFF0F0; border-color: var(--coral); animation: wrongShake 0.5s; }
+  .option-btn.wrong .option-letter { background: var(--coral); color: white; }
+  .option-btn:disabled { cursor: not-allowed; }
+  @keyframes correctPop { 0% { transform: scale(1); } 30% { transform: scale(1.06); } 60% { transform: scale(0.97); } 100% { transform: scale(1); } }
+  @keyframes wrongShake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
+  .feedback { margin-top: 18px; padding: 18px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; line-height: 1.55; display: none; }
+  .feedback.show { display: block; animation: feedbackIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .feedback.correct-fb { background: #F0FFF4; border: 2px solid var(--grass); color: #2D6A4F; }
+  .feedback.wrong-fb { background: #FFF0F0; border: 2px solid var(--coral); color: #7D2020; }
+  .feedback-title { font-family: 'Fredoka One', cursive; font-size: 1.15rem; margin-bottom: 6px; }
+  @keyframes feedbackIn { from { transform: translateY(10px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+  .mascot-wrap { text-align: center; font-size: 5rem; margin: 10px 0 -10px; animation: mascotBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97); display: none; line-height: 1; }
+  .mascot-wrap.show { display: block; }
+  .mascot-label { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--purple); display: block; margin-top: -4px; }
+  @keyframes mascotBounce { 0% { transform: scale(0) rotate(-15deg); opacity: 0; } 60% { transform: scale(1.2) rotate(5deg); opacity: 1; } 80% { transform: scale(0.9) rotate(-2deg); } 100% { transform: scale(1) rotate(0); } }
+  .next-btn {
+    display: none; width: 100%; margin-top: 16px; padding: 16px;
+    background: linear-gradient(135deg, var(--purple), #C084FC); color: white; border: none;
+    border-radius: 18px; font-family: 'Fredoka One', cursive; font-size: 1.2rem; cursor: pointer;
+    box-shadow: 0 6px 0 #7C3AED, 0 8px 20px rgba(168,85,247,0.4); transition: all 0.15s; letter-spacing: 0.5px;
+  }
+  .next-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #7C3AED, 0 10px 24px rgba(168,85,247,0.4); }
+  .next-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #7C3AED; }
+  .next-btn.show { display: block; animation: buttonPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes buttonPop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .results-screen { background: var(--white); border-radius: 28px; padding: 36px 24px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 3px solid var(--sunshine); animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .results-animal { font-size: 6rem; animation: spinIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); display: block; }
+  @keyframes spinIn { from { transform: scale(0) rotate(-180deg); } to { transform: scale(1) rotate(0); } }
+  .results-title { font-family: 'Fredoka One', cursive; font-size: 2.2rem; color: var(--purple); margin: 12px 0 6px; }
+  .results-score { font-family: 'Fredoka One', cursive; font-size: 3.5rem; color: var(--dark); margin: 10px 0; }
+  .results-score span { color: var(--coral); }
+  .results-msg { font-size: 1rem; font-weight: 700; color: #666; line-height: 1.5; margin-bottom: 20px; }
+  .medal { font-size: 2rem; animation: wiggle 1.5s ease-in-out infinite; display: inline-block; }
+  .results-breakdown { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0 24px; }
+  .breakdown-dot { aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800; }
+  .breakdown-dot.got-it { background: #DCFCE7; color: var(--grass); }
+  .breakdown-dot.missed { background: #FFE4E4; color: var(--coral); }
+  .restart-btn {
+    padding: 16px 36px; background: linear-gradient(135deg, var(--coral), var(--orange));
+    color: white; border: none; border-radius: 18px; font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem; cursor: pointer; box-shadow: 0 6px 0 #C44D3A, 0 8px 20px rgba(255,107,107,0.4); transition: all 0.15s;
+  }
+  .restart-btn:hover { transform: translateY(-2px); }
+  .restart-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #C44D3A; }
+  .start-screen { background: var(--white); border-radius: 28px; padding: 36px 24px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 3px solid var(--purple); animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .start-animals { font-size: 3rem; margin: 12px 0; letter-spacing: 4px; }
+  .start-title { font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: var(--purple); margin-bottom: 10px; }
+  .start-desc { font-size: 0.95rem; font-weight: 700; color: #666; line-height: 1.6; margin-bottom: 24px; }
+  .start-btn {
+    padding: 18px 48px; background: linear-gradient(135deg, var(--purple), #C084FC); color: white;
+    border: none; border-radius: 20px; font-family: 'Fredoka One', cursive; font-size: 1.4rem; cursor: pointer;
+    box-shadow: 0 6px 0 #7C3AED, 0 8px 24px rgba(168,85,247,0.4); transition: all 0.15s; animation: pulse 2s ease-in-out infinite;
+  }
+  .start-btn:hover { transform: translateY(-3px); }
+  .start-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #7C3AED; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 6px 0 #7C3AED, 0 8px 24px rgba(168,85,247,0.4); } 50% { box-shadow: 0 6px 0 #7C3AED, 0 8px 36px rgba(168,85,247,0.6); } }
+  @keyframes dotPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+<div class="cloud cloud-3"></div>
+<div class="confetti-container" id="confettiContainer"></div>
+
+<div class="container">
+  <div class="header">
+    <span class="robot-emoji">🤖</span>
+    <h1>AI Adventure Quiz!</h1>
+    <p class="subtitle">10 fun questions about Artificial Intelligence 🌟</p>
+  </div>
+
+  <div class="score-bar hidden" id="scoreBar">
+    <div class="score-item">
+      <div class="score-label">Score</div>
+      <div class="score-value" id="scoreDisplay">0</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">Question</div>
+      <div class="score-value" id="qNumDisplay">1/10</div>
+    </div>
+  </div>
+
+  <div class="start-screen" id="startScreen">
+    <div class="start-animals">🦁 🤖 🦊 🐧</div>
+    <div class="start-title">Ready to Explore AI?</div>
+    <div class="start-desc">
+      Answer 10 questions about Artificial Intelligence!<br>
+      You'll learn about the <strong>Turing Test</strong>, <strong>4 flavors of AI</strong>,<br>
+      <strong>Strong vs Weak AI</strong>, satisficing, and much more.<br><br>
+      Animals will cheer you on every step of the way! 🎉
+    </div>
+    <button class="start-btn" onclick="startQuiz()">Let's Go! 🚀</button>
+  </div>
+
+  <div class="question-card hidden" id="questionCard">
+    <div class="q-number" id="qNumber">Question 1 of 10</div>
+    <div class="q-text" id="qText"></div>
+    <div class="mascot-wrap" id="mascotWrap">
+      <span id="mascotEmoji"></span>
+      <span class="mascot-label" id="mascotLabel"></span>
+    </div>
+    <div class="options" id="optionsContainer"></div>
+    <div class="feedback" id="feedbackBox">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div id="feedbackText"></div>
+    </div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next Question →</button>
+  </div>
+
+  <div class="results-screen hidden" id="resultsScreen">
+    <span class="results-animal" id="resultsAnimal"></span>
+    <div class="results-title" id="resultsTitle"></div>
+    <div class="medal" id="resultsMedal"></div>
+    <div class="results-score">You got <span id="finalScore">0</span> out of 10!</div>
+    <div class="results-msg" id="resultsMsg"></div>
+    <div class="results-breakdown" id="breakdown"></div>
+    <button class="restart-btn" onclick="restartQuiz()">Play Again! 🔄</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "What is the Turing Test? 🤔",
+    options: ["A maths exam that robots take", "A test to see if a machine can think like a human without being detected", "A speed test for computers", "A test to see how fast AI can run"],
+    answer: 1,
+    explanation: "Alan Turing invented this test! If a computer can chat with a human and the human can't tell it's a machine... the computer passes the Turing Test! 🎩✨"
+  },
+  {
+    q: "Which of these is NOT one of the 4 flavors of AI? 🍦",
+    options: ["Reactive Machines", "Theory of Mind", "Super Speed AI", "Limited Memory"],
+    answer: 2,
+    explanation: "The 4 real flavors are: Reactive Machines, Limited Memory, Theory of Mind, and Self-Aware AI. 'Super Speed AI' is not a type! 🍦🍦🍦🍦"
+  },
+  {
+    q: "What does 'Weak AI' mean? 💪",
+    options: ["An AI that is broken and doesn't work", "An AI that can only do one specific task", "An AI that is very slow", "An AI made for children"],
+    answer: 1,
+    explanation: "Weak AI (also called Narrow AI) is great at ONE job — like playing chess or recognizing faces. It can't do everything like a human brain can! 🎮"
+  },
+  {
+    q: "What is 'Strong AI'? 🦸",
+    options: ["An AI robot that can lift heavy things", "A very loud computer", "An AI that can think, learn, and do anything a human can do", "An AI that runs on solar power"],
+    answer: 2,
+    explanation: "Strong AI (General AI) would think just like a human — learn anything, understand feelings, solve any problem. We haven't built it yet! 🚀"
+  },
+  {
+    q: "Which AI flavor remembers past experiences to make better decisions? 🧠",
+    options: ["Reactive Machines", "Limited Memory", "Self-Aware AI", "Theory of Mind"],
+    answer: 1,
+    explanation: "Limited Memory AI learns from past data — like how Netflix remembers what shows you like and suggests new ones! 📺"
+  },
+  {
+    q: "What does 'satisficing' mean in AI? 🎯",
+    options: ["Finding a solution that is good enough, not perfect", "Making a robot feel satisfied with food", "Searching for the absolute best answer always", "Teaching AI to be polite"],
+    answer: 0,
+    explanation: "Satisficing = SAT-isfy + sufFICE! It means finding an answer that is 'good enough' rather than hunting forever for the perfect one. Smart thinking! 💡"
+  },
+  {
+    q: "Which of these is a real-world use of AI today? 🌍",
+    options: ["Teleporting people across the world", "Time travel", "Self-driving cars recognising traffic lights", "Making dogs speak English"],
+    answer: 2,
+    explanation: "Self-driving cars use AI to see roads, read signs, and avoid crashes. Amazing but true! 🚗✨ (Dogs still can't talk though 🐕)"
+  },
+  {
+    q: "What does a Reactive Machine AI do? ⚡",
+    options: ["It reacts to the present moment only — no memory of the past", "It reacts by running away from humans", "It only works when plugged in", "It reacts slowly on purpose"],
+    answer: 0,
+    explanation: "Reactive machines only respond to what's happening RIGHT NOW. The famous chess computer Deep Blue is a reactive machine — it plays chess brilliantly but remembers nothing! ♟️"
+  },
+  {
+    q: "What would 'Theory of Mind' AI be able to do? 💭",
+    options: ["Read human thoughts with a special helmet", "Understand human emotions, beliefs, and intentions", "Calculate maths really fast", "Fly through the sky"],
+    answer: 1,
+    explanation: "Theory of Mind AI would understand feelings and what people are thinking. This type of AI doesn't fully exist yet — but scientists are working on it! 🧡"
+  },
+  {
+    q: "What is Self-Aware AI? 🪞",
+    options: ["An AI that knows it needs charging", "An AI that can fix its own bugs", "An AI with consciousness — it knows it exists and has its own feelings", "An AI that watches itself on camera"],
+    answer: 2,
+    explanation: "Self-Aware AI is the most advanced kind — it would have its own consciousness and sense of self, just like YOU do! This is still science fiction for now 🤩🌟"
+  }
+];
+
+const correctMascots = [
+  { emoji: "🦁", label: "ROAR! You're a LION! 🏆" },
+  { emoji: "⭐", label: "You're a SUPERSTAR! ✨" },
+  { emoji: "🦊", label: "Clever like a FOX! 🍀" },
+  { emoji: "🐬", label: "Smart as a DOLPHIN! 💦" },
+  { emoji: "🦅", label: "Soaring high, EAGLE! 🌤️" },
+  { emoji: "🐙", label: "Brilliant OCTOPUS brain! 🧠" },
+  { emoji: "🦄", label: "You're MAGICAL! 💫" },
+  { emoji: "🐧", label: "Cool as a PENGUIN! ❄️" },
+  { emoji: "🦋", label: "Beautiful answer! 🌺" },
+  { emoji: "🐻‍❄️", label: "ICE COLD smart! 🧊" },
+];
+
+const wrongMascots = [
+  { emoji: "🐙", label: "Oops! So close! 💜" },
+  { emoji: "🐸", label: "Ribbit! Nearly there! 🍀" },
+  { emoji: "🐼", label: "Aww, almost! 🎋" },
+  { emoji: "🐨", label: "Nearly! Keep going! 🌿" },
+  { emoji: "🦔", label: "Ouch! Not quite! 🌟" },
+];
+
+let currentQ = 0, score = 0, answers = [], answered = false;
+
+function startQuiz() {
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('questionCard').classList.remove('hidden');
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = questions[currentQ];
+  document.getElementById('qNumber').textContent = `Question ${currentQ + 1} of ${questions.length}`;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('qNumDisplay').textContent = `${currentQ + 1}/10`;
+  document.getElementById('progressFill').style.width = `${(currentQ / questions.length) * 100}%`;
+  document.getElementById('feedbackBox').className = 'feedback';
+  document.getElementById('mascotWrap').className = 'mascot-wrap';
+  document.getElementById('nextBtn').className = 'next-btn';
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  const letters = ['A', 'B', 'C', 'D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(i, btn);
+    container.appendChild(btn);
+  });
+  const card = document.getElementById('questionCard');
+  card.style.animation = 'none'; card.offsetHeight; card.style.animation = 'slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+}
+
+function selectAnswer(index, btn) {
+  if (answered) return;
+  answered = true;
+  const q = questions[currentQ];
+  const isCorrect = index === q.answer;
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+  allBtns[q.answer].classList.add('correct');
+  if (!isCorrect) btn.classList.add('wrong');
+  let mascot;
+  if (isCorrect) {
+    score++;
+    mascot = correctMascots[Math.floor(Math.random() * correctMascots.length)];
+    document.getElementById('scoreDisplay').textContent = score;
+    launchConfetti(14);
+  } else {
+    mascot = wrongMascots[Math.floor(Math.random() * wrongMascots.length)];
+  }
+  answers.push(isCorrect);
+  document.getElementById('mascotEmoji').textContent = mascot.emoji;
+  document.getElementById('mascotLabel').textContent = mascot.label;
+  const mw = document.getElementById('mascotWrap');
+  mw.className = 'mascot-wrap show';
+  mw.style.animation = 'none'; mw.offsetHeight; mw.style.animation = 'mascotBounce 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97)';
+  const fb = document.getElementById('feedbackBox');
+  document.getElementById('feedbackTitle').textContent = isCorrect ? '✅ Correct!' : '❌ Not quite!';
+  document.getElementById('feedbackText').textContent = q.explanation;
+  fb.className = `feedback show ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+  document.getElementById('nextBtn').className = 'next-btn show';
+  document.getElementById('nextBtn').textContent = currentQ < questions.length - 1 ? 'Next Question →' : 'See My Results! 🎉';
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) showResults();
+  else showQuestion();
+}
+
+function showResults() {
+  document.getElementById('questionCard').classList.add('hidden');
+  document.getElementById('scoreBar').classList.add('hidden');
+  const pct = score / questions.length;
+  let animal, title, medal, msg;
+  if (pct === 1) { animal = '🏆'; title = 'PERFECT SCORE!'; medal = '🥇'; msg = "WOW! You got everything right! You're an AI genius! Einstein would be proud! 🧠✨"; }
+  else if (pct >= 0.8) { animal = '🦁'; title = 'Amazing Job!'; medal = '🥈'; msg = "You're roaring with knowledge! Nearly perfect — you're an AI superstar! 🌟"; }
+  else if (pct >= 0.6) { animal = '🦊'; title = 'Pretty Smart!'; medal = '🥉'; msg = "Clever like a fox! You know a lot about AI. Keep learning and you'll be a genius! 🍀"; }
+  else if (pct >= 0.4) { animal = '🐧'; title = 'Good Try!'; medal = '⭐'; msg = "Cool like a penguin! AI is tricky stuff. Read through the questions again and try once more! ❄️"; }
+  else { animal = '🐻'; title = 'Keep Going!'; medal = '🌈'; msg = "Every expert starts somewhere! Review the topics and try again — you've got this! 🌟"; }
+  document.getElementById('resultsAnimal').textContent = animal;
+  document.getElementById('resultsTitle').textContent = title;
+  document.getElementById('resultsMedal').textContent = medal;
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('resultsMsg').textContent = msg;
+  const bd = document.getElementById('breakdown');
+  bd.innerHTML = '';
+  answers.forEach((correct, i) => {
+    const dot = document.createElement('div');
+    dot.className = `breakdown-dot ${correct ? 'got-it' : 'missed'}`;
+    dot.textContent = correct ? '✓' : '✗';
+    dot.style.animation = `dotPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.08}s both`;
+    bd.appendChild(dot);
+  });
+  document.getElementById('resultsScreen').classList.remove('hidden');
+  if (score >= 7) launchConfetti(40);
+}
+
+function restartQuiz() {
+  currentQ = 0; score = 0; answers = [];
+  document.getElementById('scoreDisplay').textContent = '0';
+  document.getElementById('resultsScreen').classList.add('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('questionCard').classList.remove('hidden');
+  showQuestion();
+}
+
+function launchConfetti(count) {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#FF6B6B','#FFD700','#A855F7','#4ECDC4','#FF8C42','#FF69B4','#7BC67E','#87CEEB'];
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (Math.random() * 8 + 6) + 'px';
+    piece.style.height = (Math.random() * 8 + 6) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+    container.appendChild(piece);
+    setTimeout(() => piece.remove(), 3500);
+  }
+}
+</script>
+</body>
+</html>
